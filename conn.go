@@ -23,7 +23,7 @@ import (
 	"github.com/pion/dtls/v2/pkg/protocol/recordlayer"
 	"github.com/pion/logging"
 	"github.com/pion/transport/v2/deadline"
-	"github.com/pion/transport/v2/packetconnctx"
+	"github.com/pion/transport/v2/netctx"
 	"github.com/pion/transport/v2/replaydetector"
 )
 
@@ -53,11 +53,11 @@ type addrPkt struct {
 
 // Conn represents a DTLS connection
 type Conn struct {
-	lock           sync.RWMutex       // Internal lock (must not be public)
-	nextConn       packetconnctx.Conn // Embedded Conn, typically a udpconn we read/write from
-	fragmentBuffer *fragmentBuffer    // out-of-order and missing fragment handling
-	handshakeCache *handshakeCache    // caching of handshake messages for verifyData generation
-	decrypted      chan interface{}   // Decrypted Application Data or error, pull by calling `Read`
+	lock           sync.RWMutex         // Internal lock (must not be public)
+	nextConn       netctx.PacketConnCtx // Embedded Conn, typically a udpconn we read/write from
+	fragmentBuffer *fragmentBuffer      // out-of-order and missing fragment handling
+	handshakeCache *handshakeCache      // caching of handshake messages for verifyData generation
+	decrypted      chan interface{}     // Decrypted Application Data or error, pull by calling `Read`
 
 	rAddr net.Addr
 	state State // Internal state
@@ -130,7 +130,7 @@ func createConn(ctx context.Context, nextConn net.PacketConn, config *Config, is
 	}
 
 	c := &Conn{
-		nextConn:                packetconnctx.New(nextConn),
+		nextConn:                netctx.NewPacketConn(nextConn),
 		fragmentBuffer:          newFragmentBuffer(),
 		handshakeCache:          newHandshakeCache(),
 		maximumTransmissionUnit: mtu,

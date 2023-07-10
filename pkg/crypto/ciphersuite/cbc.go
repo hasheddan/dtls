@@ -64,8 +64,8 @@ func NewCBC(localKey, localWriteIV, localMac, remoteKey, remoteWriteIV, remoteMa
 
 // Encrypt encrypt a DTLS RecordLayer message
 func (c *CBC) Encrypt(pkt *recordlayer.RecordLayer, raw []byte) ([]byte, error) {
-	payload := raw[recordlayer.HeaderSize:]
-	raw = raw[:recordlayer.HeaderSize]
+	payload := raw[pkt.Header.Size():]
+	raw = raw[:pkt.Header.Size()]
 	blockSize := c.writeCBC.BlockSize()
 
 	// Generate + Append MAC
@@ -100,22 +100,22 @@ func (c *CBC) Encrypt(pkt *recordlayer.RecordLayer, raw []byte) ([]byte, error) 
 	raw = append(raw, payload...)
 
 	// Update recordLayer size to include IV+MAC+Padding
-	binary.BigEndian.PutUint16(raw[recordlayer.HeaderSize-2:], uint16(len(raw)-recordlayer.HeaderSize))
+	binary.BigEndian.PutUint16(raw[pkt.Header.Size()-2:], uint16(len(raw)-pkt.Header.Size()))
 
 	return raw, nil
 }
 
 // Decrypt decrypts a DTLS RecordLayer message
-func (c *CBC) Decrypt(in []byte) ([]byte, error) {
-	body := in[recordlayer.HeaderSize:]
+func (c *CBC) Decrypt(h recordlayer.Header, in []byte) ([]byte, error) {
 	blockSize := c.readCBC.BlockSize()
 	mac := c.h()
 
-	var h recordlayer.Header
-	err := h.Unmarshal(in)
-	switch {
-	case err != nil:
+	if err := h.Unmarshal(in); err != nil {
 		return nil, err
+	}
+	body := in[h.Size():]
+
+	switch {
 	case h.ContentType == protocol.ContentTypeChangeCipherSpec:
 		// Nothing to encrypt with ChangeCipherSpec
 		return in, nil
@@ -152,7 +152,7 @@ func (c *CBC) Decrypt(in []byte) ([]byte, error) {
 		return nil, errInvalidMAC
 	}
 
-	return append(in[:recordlayer.HeaderSize], body[:dataEnd]...), nil
+	return append(in[:h.Size()], body[:dataEnd]...), nil
 }
 
 func (c *CBC) hmac(epoch uint16, sequenceNumber uint64, contentType protocol.ContentType, protocolVersion protocol.Version, payload []byte, key []byte, hf func() hash.Hash) ([]byte, error) {

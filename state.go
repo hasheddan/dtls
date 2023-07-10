@@ -27,6 +27,17 @@ type State struct {
 	IdentityHint          []byte
 	SessionID             []byte
 
+	// LocalConnectionID is the locally generated connection ID that is expected
+	// to be received from the remote endpoint.
+	// For a server, this is the connection ID sent in ServerHello.
+	// For a client, this is the connection ID sent in the ClientHello.
+	LocalConnectionID []byte
+	// RemoteConnectionID is the connection ID that the remote endpoint
+	// specifies should be sent.
+	// For a server, this is the connection ID received in the ClientHello.
+	// For a client, this is the connection ID received in the ServerHello.
+	RemoteConnectionID []byte
+
 	isClient bool
 
 	preMasterSecret      []byte
@@ -63,6 +74,8 @@ type serializedState struct {
 	IdentityHint          []byte
 	SessionID             []byte
 	IsClient              bool
+	RemoteConnectionID    []byte
+	LocalConnectionID     []byte
 }
 
 func (s *State) clone() *State {
@@ -92,6 +105,8 @@ func (s *State) serialize() *serializedState {
 		IdentityHint:          s.IdentityHint,
 		SessionID:             s.SessionID,
 		IsClient:              s.isClient,
+		RemoteConnectionID:    s.RemoteConnectionID,
+		LocalConnectionID:     s.LocalConnectionID,
 	}
 }
 
@@ -129,6 +144,8 @@ func (s *State) deserialize(serialized serializedState) {
 	s.PeerCertificates = serialized.PeerCertificates
 	s.IdentityHint = serialized.IdentityHint
 	s.SessionID = serialized.SessionID
+	s.RemoteConnectionID = serialized.RemoteConnectionID
+	s.LocalConnectionID = serialized.LocalConnectionID
 }
 
 func (s *State) initCipherSuite() error {

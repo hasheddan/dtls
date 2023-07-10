@@ -69,6 +69,8 @@ func flight0Parse(_ context.Context, _ flightConn, state *State, cache *handshak
 			state.serverName = e.ServerName // remote server name
 		case *extension.ALPN:
 			state.peerSupportedProtocols = e.ProtocolNameList
+		case *extension.ConnectionID:
+			state.RemoteConnectionID = e.CID
 		}
 	}
 

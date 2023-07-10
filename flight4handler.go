@@ -250,6 +250,13 @@ func flight4Generate(_ flightConn, state *State, _ *handshakeCache, cfg *handsha
 		state.NegotiatedProtocol = selectedProto
 	}
 
+	// If we have a connection ID generator, we are willing to use connection
+	// IDs.
+	if cfg.connectionIDGenerator != nil {
+		state.LocalConnectionID = cfg.connectionIDGenerator()
+		extensions = append(extensions, &extension.ConnectionID{CID: state.LocalConnectionID})
+	}
+
 	var pkts []*packet
 	cipherSuiteID := uint16(state.cipherSuite.ID())
 

@@ -5,12 +5,14 @@ package recordlayer
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func partialHeaderMismatch(a, b Header) bool {
 	// Ignoring content length for now.
 	a.ContentLen = b.ContentLen
-	return a != b
+	return cmp.Equal(a, b)
 }
 
 func FuzzRecordLayer(f *testing.F) {

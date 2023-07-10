@@ -66,6 +66,8 @@ func flight3Parse(ctx context.Context, c flightConn, state *State, cache *handsh
 					return 0, &alert.Alert{Level: alert.Fatal, Description: alert.InternalError}, extension.ErrALPNInvalidFormat // Meh, internal error?
 				}
 				state.NegotiatedProtocol = e.ProtocolNameList[0]
+			case *extension.ConnectionID:
+				state.RemoteConnectionID = e.CID
 			}
 		}
 		if cfg.extendedMasterSecret == RequireExtendedMasterSecret && !state.extendedMasterSecret {
@@ -266,6 +268,12 @@ func flight3Generate(_ flightConn, state *State, _ *handshakeCache, cfg *handsha
 
 	if len(cfg.supportedProtocols) > 0 {
 		extensions = append(extensions, &extension.ALPN{ProtocolNameList: cfg.supportedProtocols})
+	}
+
+	// If we sent a connection ID on the first ClientHello, send it on the
+	// second.
+	if state.LocalConnectionID != nil {
+		extensions = append(extensions, &extension.ConnectionID{CID: state.LocalConnectionID})
 	}
 
 	return []*packet{

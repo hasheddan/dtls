@@ -176,6 +176,13 @@ type Config struct {
 	// skip hello verify phase and receive ServerHello after initial ClientHello.
 	// This have implication on DoS attack resistance.
 	InsecureSkipVerifyHello bool
+
+	// ConnectionIDGenerator generates connection identifiers that should be
+	// sent by the remote party if it supports the DTLS Connection Identifier
+	// extension, as determined during the handshake. Generated connection
+	// identifiers must always have the same length.
+	// https://datatracker.ietf.org/doc/html/rfc9146
+	ConnectionIDGenerator func() []byte
 }
 
 func defaultConnectContextMaker() (context.Context, func()) {

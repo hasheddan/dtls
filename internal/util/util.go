@@ -6,6 +6,8 @@ package util
 
 import (
 	"encoding/binary"
+
+	"golang.org/x/crypto/cryptobyte"
 )
 
 // BigEndianUint24 returns the value of a big endian uint24
@@ -39,4 +41,9 @@ func Max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// AddUint64 appends a big-endian, 48-bit value to the byte string.
+func AddUint48(b *cryptobyte.Builder, v uint64) {
+	b.AddBytes([]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)})
 }

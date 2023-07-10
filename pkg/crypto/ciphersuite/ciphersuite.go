@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"github.com/pion/dtls/v2/internal/util"
 	"github.com/pion/dtls/v2/pkg/protocol"
 	"github.com/pion/dtls/v2/pkg/protocol/recordlayer"
 	"golang.org/x/crypto/cryptobyte"
@@ -49,13 +50,11 @@ func generateAEADAdditionalDataCID(h *recordlayer.Header, payloadLen int) []byte
 	b.AddUint8(h.Version.Major)
 	b.AddUint8(h.Version.Minor)
 	b.AddUint16(h.Epoch)
-	// TOOD: THIS MUST BE 48 bits
-	b.AddUint64(h.SequenceNumber)
+	util.AddUint48(&b, h.SequenceNumber)
 	b.AddBytes(h.ConnectionID)
 	b.AddUint16(uint16(payloadLen))
 
-	out, _ := b.Bytes()
-	return out
+	return b.BytesOrPanic()
 }
 
 // examinePadding returns, in constant time, the length of the padding to remove

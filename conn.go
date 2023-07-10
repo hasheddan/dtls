@@ -475,7 +475,7 @@ func (c *Conn) writePackets(ctx context.Context, pkts []*packet) error {
 	compactedRawPackets := c.compactRawPackets(rawPackets)
 
 	for _, compactedRawPackets := range compactedRawPackets {
-		if _, err := c.nextConn.WriteContext(ctx, compactedRawPackets, c.rAddr); err != nil {
+		if _, err := c.nextConn.WriteToContext(ctx, compactedRawPackets, c.rAddr); err != nil {
 			return netError(err)
 		}
 	}
@@ -695,7 +695,7 @@ func (c *Conn) readAndBuffer(ctx context.Context) error {
 	defer poolReadBuffer.Put(bufptr)
 
 	b := *bufptr
-	i, rAddr, err := c.nextConn.ReadContext(ctx, b)
+	i, rAddr, err := c.nextConn.ReadFromContext(ctx, b)
 	if err != nil {
 		return netError(err)
 	}

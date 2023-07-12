@@ -282,9 +282,10 @@ func testPionE2ESimple(t *testing.T, server, client func(*comm)) {
 			}
 
 			cfg := &dtls.Config{
-				Certificates:       []tls.Certificate{cert},
-				CipherSuites:       []dtls.CipherSuiteID{cipherSuite},
-				InsecureSkipVerify: true,
+				Certificates:          []tls.Certificate{cert},
+				CipherSuites:          []dtls.CipherSuiteID{cipherSuite},
+				InsecureSkipVerify:    true,
+				ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 			}
 			serverPort := randomPort(t)
 			comm := newComm(ctx, cfg, cfg, serverPort, server, client)

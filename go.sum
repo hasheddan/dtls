@@ -3,10 +3,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/hasheddan/transport/v2 v2.0.0-20230709232329-54c10e3df57e h1:5UKQQKJIc9O9ML8e/fU6qm19cB1/B5hu+SxUI6tswMo=
-github.com/hasheddan/transport/v2 v2.0.0-20230709232329-54c10e3df57e/go.mod h1:DyLvOsVZRuWDdHowOBeZkRBQuM620IURhtQRHzecFxs=
 github.com/pion/logging v0.2.2 h1:M9+AIj/+pxNsDfAT64+MAVgJO0rsyLnoJKCqf//DoeY=
 github.com/pion/logging v0.2.2/go.mod h1:k0/tDVsRCX2Mb2ZEmTqNa7CWsQPc+YYCB7Q+5pahoms=
+github.com/pion/transport/v2 v2.2.2-0.20230711104634-a789100cc553 h1:HpaB7Mq9VWmMMiz9727IecxPj/XWyV7urHKFxugYLzg=
+github.com/pion/transport/v2 v2.2.2-0.20230711104634-a789100cc553/go.mod h1:btMS/SQTvTDn7tf8eZedcgo4YouWf1kH4p0mAETpu1w=
+github.com/pion/transport/v2 v2.2.2-0.20230801111619-41845b068b67 h1:PYVmNZmJN/Ide6jcp6IdoqsvjhQxmrUSjQaQxsY5ROQ=
+github.com/pion/transport/v2 v2.2.2-0.20230801111619-41845b068b67/go.mod h1:PpOb8shbrv07ogRHvGlPYfp0lYSCxtXJQa0orEfXvHg=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

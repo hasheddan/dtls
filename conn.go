@@ -53,11 +53,11 @@ type addrPkt struct {
 
 // Conn represents a DTLS connection
 type Conn struct {
-	lock           sync.RWMutex         // Internal lock (must not be public)
-	nextConn       netctx.PacketConnCtx // Embedded Conn, typically a udpconn we read/write from
-	fragmentBuffer *fragmentBuffer      // out-of-order and missing fragment handling
-	handshakeCache *handshakeCache      // caching of handshake messages for verifyData generation
-	decrypted      chan interface{}     // Decrypted Application Data or error, pull by calling `Read`
+	lock           sync.RWMutex      // Internal lock (must not be public)
+	nextConn       netctx.PacketConn // Embedded Conn, typically a udpconn we read/write from
+	fragmentBuffer *fragmentBuffer   // out-of-order and missing fragment handling
+	handshakeCache *handshakeCache   // caching of handshake messages for verifyData generation
+	decrypted      chan interface{}  // Decrypted Application Data or error, pull by calling `Read`
 
 	rAddr net.Addr
 	state State // Internal state

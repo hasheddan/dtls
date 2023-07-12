@@ -43,7 +43,7 @@ func Max(a, b int) int {
 	return b
 }
 
-// AddUint64 appends a big-endian, 48-bit value to the byte string.
+// AddUint48 appends a big-endian, 48-bit value to the byte string.
 // Remove if / when https://github.com/golang/crypto/pull/265 is merged
 // upstream.
 func AddUint48(b *cryptobyte.Builder, v uint64) {

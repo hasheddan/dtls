@@ -1169,12 +1169,13 @@ func (c *Conn) RemoteAddr() net.Addr {
 	return c.rAddr
 }
 
+// TODO: refactor to support using connection IDs and updates to remote address.
 func (c *Conn) sessionKey() []byte {
 	if c.state.isClient {
 		// As ServerName can be like 0.example.com, it's better to add
 		// delimiter character which is not allowed to be in
 		// neither address or domain name.
-		return []byte(c.rAddr.String() + "_" + c.fsm.cfg.serverName)
+		return []byte("TODO" + "_" + c.fsm.cfg.serverName)
 	}
 	return c.state.SessionID
 }

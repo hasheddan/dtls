@@ -453,7 +453,7 @@ func (c *Conn) writePackets(ctx context.Context, pkts []*packet) error {
 			c.log.Tracef("[handshake:%v] -> %s (epoch: %d, seq: %d)",
 				srvCliStr(c.state.isClient), h.Header.Type.String(),
 				p.record.Header.Epoch, h.Header.MessageSequence)
-			// TOOD: Finished record may contain CID.
+			// TODO: Finished record may contain CID.
 			c.handshakeCache.push(handshakeRaw[recordlayer.DefaultHeaderSize:], p.record.Header.Epoch, h.Header.MessageSequence, h.Header.Type, c.state.isClient)
 
 			rawHandshakePackets, err := c.processHandshakePacket(p, h)

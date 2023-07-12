@@ -519,12 +519,12 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 	}
 	p.record.Header.SequenceNumber = seq
 
-	rawPacket, err := p.record.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
+	var rawPacket []byte
 	if p.shouldWrapCID {
+		// Record must be marshalled to populate fields used in inner plaintext.
+		if _, err := p.record.Marshal(); err != nil {
+			return nil, err
+		}
 		content, err := p.record.Content.Marshal()
 		if err != nil {
 			return nil, err
@@ -552,6 +552,12 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 		}
 		p.record.Header = *cidHeader
 		rawPacket = append(rawPacket, rawInner...)
+	} else {
+		var err error
+		rawPacket, err = p.record.Marshal()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if p.shouldEncrypt {
@@ -583,22 +589,7 @@ func (c *Conn) processHandshakePacket(p *packet, h *handshake.Handshake) ([][]by
 			return nil, errSequenceNumberOverflow
 		}
 
-		recordlayerHeader := &recordlayer.Header{
-			Version:        p.record.Header.Version,
-			ContentType:    p.record.Header.ContentType,
-			ContentLen:     uint16(len(handshakeFragment)),
-			Epoch:          p.record.Header.Epoch,
-			SequenceNumber: seq,
-		}
-
-		rawPacket, err := recordlayerHeader.Marshal()
-		if err != nil {
-			return nil, err
-		}
-
-		p.record.Header = *recordlayerHeader
-		rawPacket = append(rawPacket, handshakeFragment...)
-
+		var rawPacket []byte
 		if p.shouldWrapCID {
 			inner := &recordlayer.InnerPlaintext{
 				Content:  handshakeFragment,
@@ -623,6 +614,22 @@ func (c *Conn) processHandshakePacket(p *packet, h *handshake.Handshake) ([][]by
 			}
 			p.record.Header = *cidHeader
 			rawPacket = append(rawPacket, rawInner...)
+		} else {
+			recordlayerHeader := &recordlayer.Header{
+				Version:        p.record.Header.Version,
+				ContentType:    p.record.Header.ContentType,
+				ContentLen:     uint16(len(handshakeFragment)),
+				Epoch:          p.record.Header.Epoch,
+				SequenceNumber: seq,
+			}
+
+			rawPacket, err = recordlayerHeader.Marshal()
+			if err != nil {
+				return nil, err
+			}
+
+			p.record.Header = *recordlayerHeader
+			rawPacket = append(rawPacket, handshakeFragment...)
 		}
 
 		if p.shouldEncrypt {

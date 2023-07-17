@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/cryptobyte"
 )
 
-// Connection ID is a DTLS extension that provides an alternative to IP address
+// ConnectionID is a DTLS extension that provides an alternative to IP address
 // and port for session association.
 //
 // https://tools.ietf.org/html/rfc9146

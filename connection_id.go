@@ -11,7 +11,7 @@ func RandomCIDGenerator(size int) func() []byte {
 	return func() []byte {
 		cid := make([]byte, size)
 		if _, err := rand.Read(cid); err != nil {
-			panic(err)
+			panic(err) //nolint -- nonrecoverable
 		}
 		return cid
 	}

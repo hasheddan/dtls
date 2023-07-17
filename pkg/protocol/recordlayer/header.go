@@ -77,6 +77,7 @@ func (h *Header) Unmarshal(data []byte) error {
 	return nil
 }
 
+// Size returns the total size of the header.
 func (h *Header) Size() int {
 	return DefaultHeaderSize + len(h.ConnectionID)
 }

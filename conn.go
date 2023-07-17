@@ -480,7 +480,7 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 
 	var rawPacket []byte
 	if p.shouldWrapCID {
-		// Record must be marshalled to populate fields used in inner plaintext.
+		// Record must be marshaled to populate fields used in inner plaintext.
 		if _, err := p.record.Marshal(); err != nil {
 			return nil, err
 		}
@@ -493,7 +493,7 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 			RealType: p.record.Header.ContentType,
 			Zeros:    8,
 		}
-		rawInner, err := inner.Marshal()
+		rawInner, err := inner.Marshal() //nolint:govet
 		if err != nil {
 			return nil, err
 		}
@@ -815,12 +815,12 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 				Epoch:          h.Epoch,
 				SequenceNumber: h.SequenceNumber,
 			}
-			hBuf, err := unpacked.Marshal()
+			buf, err = unpacked.Marshal()
 			if err != nil {
 				c.log.Debugf("converting CID record to inner plaintext failed: %s", err)
 				return false, nil, nil
 			}
-			buf = append(hBuf, ip.Content...)
+			buf = append(buf, ip.Content...)
 		}
 
 		// If connection ID does not match discard the packet.

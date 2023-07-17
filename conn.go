@@ -1009,7 +1009,7 @@ func (c *Conn) handshake(ctx context.Context, cfg *handshakeConfig, initialFligh
 					}
 				} else {
 					switch {
-					case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled), errors.Is(err, io.EOF):
+					case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled), errors.Is(err, io.EOF), errors.Is(err, net.ErrClosed):
 					default:
 						if c.isHandshakeCompletedSuccessfully() {
 							// Keep read loop and pass the read error to Read()

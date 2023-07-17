@@ -269,9 +269,6 @@ func Server(conn net.Conn, config *Config) (*Conn, error) {
 }
 
 func UDPServer(ctx context.Context, conn net.PacketConn, config *Config) (*Conn, error) {
-	ctx, cancel := config.connectContextMaker()
-	defer cancel()
-
 	return createConn(ctx, conn, config, true, nil)
 }
 
@@ -282,44 +279,6 @@ func DialWithContext(ctx context.Context, network string, raddr *net.UDPAddr, co
 		return nil, err
 	}
 	return ClientWithContext(ctx, pConn, config)
-}
-
-type connPacket struct {
-	conn net.Conn
-}
-
-func fromConn(conn net.Conn) net.PacketConn {
-	return &connPacket{conn}
-}
-
-func (cp *connPacket) ReadFrom(b []byte) (int, net.Addr, error) {
-	n, err := cp.conn.Read(b)
-	return n, cp.conn.RemoteAddr(), err
-}
-
-func (cp *connPacket) WriteTo(b []byte, _ net.Addr) (int, error) {
-	n, err := cp.conn.Write(b)
-	return n, err
-}
-
-func (cp *connPacket) Close() error {
-	return cp.conn.Close()
-}
-
-func (cp *connPacket) LocalAddr() net.Addr {
-	return cp.conn.LocalAddr()
-}
-
-func (cp *connPacket) SetDeadline(t time.Time) error {
-	return cp.conn.SetDeadline(t)
-}
-
-func (cp *connPacket) SetReadDeadline(t time.Time) error {
-	return cp.conn.SetReadDeadline(t)
-}
-
-func (cp *connPacket) SetWriteDeadline(t time.Time) error {
-	return cp.conn.SetWriteDeadline(t)
 }
 
 // ClientWithContext establishes a DTLS connection over an existing connection.

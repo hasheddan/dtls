@@ -318,8 +318,9 @@ func testPionE2ESimplePSK(t *testing.T, server, client func(*comm)) {
 				PSK: func(hint []byte) ([]byte, error) {
 					return []byte{0xAB, 0xC1, 0x23}, nil
 				},
-				PSKIdentityHint: []byte{0x01, 0x02, 0x03, 0x04, 0x05},
-				CipherSuites:    []dtls.CipherSuiteID{cipherSuite},
+				PSKIdentityHint:       []byte{0x01, 0x02, 0x03, 0x04, 0x05},
+				CipherSuites:          []dtls.CipherSuiteID{cipherSuite},
+				ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 			}
 			serverPort := randomPort(t)
 			comm := newComm(ctx, cfg, cfg, serverPort, server, client)
@@ -352,10 +353,11 @@ func testPionE2EMTUs(t *testing.T, server, client func(*comm)) {
 			}
 
 			cfg := &dtls.Config{
-				Certificates:       []tls.Certificate{cert},
-				CipherSuites:       []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
-				InsecureSkipVerify: true,
-				MTU:                mtu,
+				Certificates:          []tls.Certificate{cert},
+				CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+				InsecureSkipVerify:    true,
+				MTU:                   mtu,
+				ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 			}
 			serverPort := randomPort(t)
 			comm := newComm(ctx, cfg, cfg, serverPort, server, client)
@@ -394,9 +396,10 @@ func testPionE2ESimpleED25519(t *testing.T, server, client func(*comm)) {
 			}
 
 			cfg := &dtls.Config{
-				Certificates:       []tls.Certificate{cert},
-				CipherSuites:       []dtls.CipherSuiteID{cipherSuite},
-				InsecureSkipVerify: true,
+				Certificates:          []tls.Certificate{cert},
+				CipherSuites:          []dtls.CipherSuiteID{cipherSuite},
+				InsecureSkipVerify:    true,
+				ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 			}
 			serverPort := randomPort(t)
 			comm := newComm(ctx, cfg, cfg, serverPort, server, client)
@@ -435,14 +438,16 @@ func testPionE2ESimpleED25519ClientCert(t *testing.T, server, client func(*comm)
 	}
 
 	scfg := &dtls.Config{
-		Certificates: []tls.Certificate{scert},
-		CipherSuites: []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
-		ClientAuth:   dtls.RequireAnyClientCert,
+		Certificates:          []tls.Certificate{scert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+		ClientAuth:            dtls.RequireAnyClientCert,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	ccfg := &dtls.Config{
-		Certificates:       []tls.Certificate{ccert},
-		CipherSuites:       []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
-		InsecureSkipVerify: true,
+		Certificates:          []tls.Certificate{ccert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+		InsecureSkipVerify:    true,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	serverPort := randomPort(t)
 	comm := newComm(ctx, ccfg, scfg, serverPort, server, client)
@@ -478,15 +483,17 @@ func testPionE2ESimpleECDSAClientCert(t *testing.T, server, client func(*comm)) 
 	clientCAs.AddCert(caCert)
 
 	scfg := &dtls.Config{
-		ClientCAs:    clientCAs,
-		Certificates: []tls.Certificate{scert},
-		CipherSuites: []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
-		ClientAuth:   dtls.RequireAnyClientCert,
+		ClientCAs:             clientCAs,
+		Certificates:          []tls.Certificate{scert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+		ClientAuth:            dtls.RequireAnyClientCert,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	ccfg := &dtls.Config{
-		Certificates:       []tls.Certificate{ccert},
-		CipherSuites:       []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
-		InsecureSkipVerify: true,
+		Certificates:          []tls.Certificate{ccert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+		InsecureSkipVerify:    true,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	serverPort := randomPort(t)
 	comm := newComm(ctx, ccfg, scfg, serverPort, server, client)
@@ -523,14 +530,16 @@ func testPionE2ESimpleRSAClientCert(t *testing.T, server, client func(*comm)) {
 	}
 
 	scfg := &dtls.Config{
-		Certificates: []tls.Certificate{scert},
-		CipherSuites: []dtls.CipherSuiteID{dtls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
-		ClientAuth:   dtls.RequireAnyClientCert,
+		Certificates:          []tls.Certificate{scert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+		ClientAuth:            dtls.RequireAnyClientCert,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	ccfg := &dtls.Config{
-		Certificates:       []tls.Certificate{ccert},
-		CipherSuites:       []dtls.CipherSuiteID{dtls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
-		InsecureSkipVerify: true,
+		Certificates:          []tls.Certificate{ccert},
+		CipherSuites:          []dtls.CipherSuiteID{dtls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+		InsecureSkipVerify:    true,
+		ConnectionIDGenerator: dtls.RandomCIDGenerator(8),
 	}
 	serverPort := randomPort(t)
 	comm := newComm(ctx, ccfg, scfg, serverPort, server, client)

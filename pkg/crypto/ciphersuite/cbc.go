@@ -155,7 +155,7 @@ func (c *CBC) Decrypt(h recordlayer.Header, in []byte) ([]byte, error) {
 	var err error
 	var actualMAC []byte
 	if h.ContentType == protocol.ContentTypeConnectionID {
-		actualMAC, err = c.hmacCID(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, body[:dataEnd], c.readMac, c.h, h.ConnectionID)
+		actualMAC, err = c.hmacCID(h.Epoch, h.SequenceNumber, h.Version, body[:dataEnd], c.readMac, c.h, h.ConnectionID)
 	} else {
 		actualMAC, err = c.hmac(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, body[:dataEnd], c.readMac, c.h)
 	}
@@ -191,7 +191,7 @@ func (c *CBC) hmac(epoch uint16, sequenceNumber uint64, contentType protocol.Con
 
 // hmacCID calculates a MAC according to
 // https://datatracker.ietf.org/doc/html/rfc9146#section-5.1
-func (c *CBC) hmacCID(epoch uint16, sequenceNumber uint64, contentType protocol.ContentType, protocolVersion protocol.Version, payload []byte, key []byte, hf func() hash.Hash, cid []byte) ([]byte, error) {
+func (c *CBC) hmacCID(epoch uint16, sequenceNumber uint64, protocolVersion protocol.Version, payload []byte, key []byte, hf func() hash.Hash, cid []byte) ([]byte, error) {
 	// Must unmarshal inner plaintext in orde to perform MAC.
 	ip := &recordlayer.InnerPlaintext{}
 	if err := ip.Unmarshal(payload); err != nil {

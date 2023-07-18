@@ -415,7 +415,7 @@ func (c *Conn) writePackets(ctx context.Context, pkts []*packet) error {
 			c.log.Tracef("[handshake:%v] -> %s (epoch: %d, seq: %d)",
 				srvCliStr(c.state.isClient), h.Header.Type.String(),
 				p.record.Header.Epoch, h.Header.MessageSequence)
-			// TODO: Finished record may contain CID.
+
 			c.handshakeCache.push(handshakeRaw[recordlayer.DefaultHeaderSize:], p.record.Header.Epoch, h.Header.MessageSequence, h.Header.Type, c.state.isClient)
 
 			rawHandshakePackets, err := c.processHandshakePacket(p, h)
@@ -558,7 +558,7 @@ func (c *Conn) processHandshakePacket(p *packet, h *handshake.Handshake) ([][]by
 				RealType: protocol.ContentTypeHandshake,
 				Zeros:    8,
 			}
-			rawInner, err := inner.Marshal()
+			rawInner, err := inner.Marshal() //nolint:govet
 			if err != nil {
 				return nil, err
 			}
@@ -807,7 +807,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		// further processing.
 		if h.ContentType == protocol.ContentTypeConnectionID {
 			ip := &recordlayer.InnerPlaintext{}
-			if err := ip.Unmarshal(buf[h.Size():]); err != nil {
+			if err := ip.Unmarshal(buf[h.Size():]); err != nil { //nolint:govet
 				c.log.Debugf("unpacking inner plaintext failed: %s", err)
 				return false, nil, nil
 			}

@@ -40,6 +40,8 @@ func generateAEADAdditionalData(h *recordlayer.Header, payloadLen int) []byte {
 	return additionalData[:]
 }
 
+// generateAEADAdditionalDataCID generates additional data for AEAD ciphers
+// according to https://datatracker.ietf.org/doc/html/rfc9146#name-aead-ciphers
 func generateAEADAdditionalDataCID(h *recordlayer.Header, payloadLen int) []byte {
 	var b cryptobyte.Builder
 

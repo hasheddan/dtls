@@ -70,7 +70,12 @@ func (c *CCM) Encrypt(pkt *recordlayer.RecordLayer, raw []byte) ([]byte, error) 
 		return nil, err
 	}
 
-	additionalData := generateAEADAdditionalData(&pkt.Header, len(payload))
+	var additionalData []byte
+	if pkt.Header.ContentType == protocol.ContentTypeConnectionID {
+		additionalData = generateAEADAdditionalDataCID(&pkt.Header, len(payload))
+	} else {
+		additionalData = generateAEADAdditionalData(&pkt.Header, len(payload))
+	}
 	encryptedPayload := c.localCCM.Seal(nil, nonce, payload, additionalData)
 
 	encryptedPayload = append(nonce[4:], encryptedPayload...)
@@ -97,7 +102,12 @@ func (c *CCM) Decrypt(h recordlayer.Header, in []byte) ([]byte, error) {
 	nonce := append(append([]byte{}, c.remoteWriteIV[:4]...), in[h.Size():h.Size()+8]...)
 	out := in[h.Size()+8:]
 
-	additionalData := generateAEADAdditionalData(&h, len(out)-int(c.tagLen))
+	var additionalData []byte
+	if h.ContentType == protocol.ContentTypeConnectionID {
+		additionalData = generateAEADAdditionalDataCID(&h, len(out)-int(c.tagLen))
+	} else {
+		additionalData = generateAEADAdditionalData(&h, len(out)-int(c.tagLen))
+	}
 	var err error
 	out, err = c.remoteCCM.Open(out[:0], nonce, out, additionalData)
 	if err != nil {

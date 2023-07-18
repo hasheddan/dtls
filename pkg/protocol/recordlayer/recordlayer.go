@@ -11,6 +11,23 @@ import (
 	"github.com/pion/dtls/v2/pkg/protocol/handshake"
 )
 
+// DTLS fixed size record layer header when Connection IDs are not in-use.
+
+// --------------------------------
+// | Type   |   Version   | Epoch |
+// --------------------------------
+// | Epoch  |    Sequence Number  |
+// --------------------------------
+// |   Sequence Number   | Length |
+// --------------------------------
+// | Length |      Fragment...    |
+// --------------------------------
+
+// fixedHeaderLenIdx is the index at which the record layer content length is
+// specified in a fixed length header (i.e. one that does not include a
+// Connection ID).
+const fixedHeaderLenIdx = 11
+
 // RecordLayer which handles all data transport.
 // The record layer is assumed to sit directly on top of some
 // reliable transport such as TCP. The record layer can carry four types of content:
@@ -106,7 +123,7 @@ func ContentAwareUnpackDatagram(buf []byte, cidLength int) ([][]byte, error) {
 
 	for offset := 0; len(buf) != offset; {
 		headerSize := DefaultHeaderSize
-		lenIdx := 11
+		lenIdx := fixedHeaderLenIdx
 		if protocol.ContentType(buf[offset]) == protocol.ContentTypeConnectionID {
 			headerSize += cidLength
 			lenIdx += cidLength

@@ -75,9 +75,9 @@ func (c *CBC) Encrypt(pkt *recordlayer.RecordLayer, raw []byte) ([]byte, error) 
 	var err error
 	var mac []byte
 	if h.ContentType == protocol.ContentTypeConnectionID {
-		mac, err = c.hmacCID(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, payload, c.readMac, c.h, h.ConnectionID)
+		mac, err = c.hmacCID(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, payload, c.writeMac, c.h, h.ConnectionID)
 	} else {
-		mac, err = c.hmac(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, payload, c.readMac, c.h)
+		mac, err = c.hmac(h.Epoch, h.SequenceNumber, h.ContentType, h.Version, payload, c.writeMac, c.h)
 	}
 	if err != nil {
 		return nil, err

@@ -67,7 +67,7 @@ func flight3Parse(ctx context.Context, c flightConn, state *State, cache *handsh
 				}
 				state.NegotiatedProtocol = e.ProtocolNameList[0]
 			case *extension.ConnectionID:
-				state.RemoteConnectionID = e.CID
+				state.remoteConnectionID = e.CID
 			}
 		}
 		if cfg.extendedMasterSecret == RequireExtendedMasterSecret && !state.extendedMasterSecret {
@@ -272,8 +272,8 @@ func flight3Generate(_ flightConn, state *State, _ *handshakeCache, cfg *handsha
 
 	// If we sent a connection ID on the first ClientHello, send it on the
 	// second.
-	if state.LocalConnectionID != nil {
-		extensions = append(extensions, &extension.ConnectionID{CID: state.LocalConnectionID})
+	if state.localConnectionID != nil {
+		extensions = append(extensions, &extension.ConnectionID{CID: state.localConnectionID})
 	}
 
 	return []*packet{

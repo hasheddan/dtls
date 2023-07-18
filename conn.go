@@ -58,9 +58,8 @@ type Conn struct {
 	fragmentBuffer *fragmentBuffer   // out-of-order and missing fragment handling
 	handshakeCache *handshakeCache   // caching of handshake messages for verifyData generation
 	decrypted      chan interface{}  // Decrypted Application Data or error, pull by calling `Read`
-
-	rAddr net.Addr
-	state State // Internal state
+	rAddr          net.Addr
+	state          State // Internal state
 
 	maximumTransmissionUnit int
 
@@ -88,7 +87,7 @@ type Conn struct {
 	replayProtectionWindow uint
 }
 
-func createConn(ctx context.Context, nextConn net.PacketConn, config *Config, isClient bool, initialState *State) (*Conn, error) {
+func createConn(ctx context.Context, nextConn net.PacketConn, rAddr net.Addr, config *Config, isClient bool, initialState *State) (*Conn, error) {
 	if err := validateConfig(config); err != nil {
 		return nil, err
 	}
@@ -130,6 +129,7 @@ func createConn(ctx context.Context, nextConn net.PacketConn, config *Config, is
 	}
 
 	c := &Conn{
+		rAddr:                   rAddr,
 		nextConn:                netctx.NewPacketConn(nextConn),
 		fragmentBuffer:          newFragmentBuffer(),
 		handshakeCache:          newHandshakeCache(),
@@ -268,8 +268,8 @@ func Server(conn net.Conn, config *Config) (*Conn, error) {
 	return ServerWithContext(ctx, conn, config)
 }
 
-func UDPServer(ctx context.Context, conn net.PacketConn, config *Config) (*Conn, error) {
-	return createConn(ctx, conn, config, true, nil)
+func UDPServer(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
+	return createConn(ctx, conn, rAddr, config, true, nil)
 }
 
 // DialWithContext connects to the given network address and establishes a DTLS connection on top.
@@ -290,7 +290,7 @@ func ClientWithContext(ctx context.Context, conn net.Conn, config *Config) (*Con
 		return nil, errPSKAndIdentityMustBeSetForClient
 	}
 
-	return createConn(ctx, fromConn(conn), config, true, nil)
+	return createConn(ctx, fromConn(conn), conn.RemoteAddr(), config, true, nil)
 }
 
 // ServerWithContext listens for incoming DTLS connections.
@@ -299,7 +299,7 @@ func ServerWithContext(ctx context.Context, conn net.Conn, config *Config) (*Con
 		return nil, errNoConfigProvided
 	}
 
-	return createConn(ctx, fromConn(conn), config, false, nil)
+	return createConn(ctx, fromConn(conn), conn.RemoteAddr(), config, false, nil)
 }
 
 // Read reads data from the connection.
@@ -363,7 +363,7 @@ func (c *Conn) Write(p []byte) (int, error) {
 					Data: p,
 				},
 			},
-			shouldWrapCID: len(c.state.RemoteConnectionID) > 0,
+			shouldWrapCID: len(c.state.remoteConnectionID) > 0,
 			shouldEncrypt: true,
 		},
 	})
@@ -502,7 +502,7 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 			ContentType:    protocol.ContentTypeConnectionID,
 			Epoch:          p.record.Header.Epoch,
 			ContentLen:     uint16(len(rawInner)),
-			ConnectionID:   c.state.RemoteConnectionID,
+			ConnectionID:   c.state.remoteConnectionID,
 			SequenceNumber: p.record.Header.SequenceNumber,
 		}
 		rawPacket, err = cidHeader.Marshal()
@@ -564,7 +564,7 @@ func (c *Conn) processHandshakePacket(p *packet, h *handshake.Handshake) ([][]by
 				ContentType:    protocol.ContentTypeConnectionID,
 				Epoch:          p.record.Header.Epoch,
 				ContentLen:     uint16(len(rawInner)),
-				ConnectionID:   c.state.RemoteConnectionID,
+				ConnectionID:   c.state.remoteConnectionID,
 				SequenceNumber: p.record.Header.SequenceNumber,
 			}
 			rawPacket, err = cidHeader.Marshal()
@@ -666,7 +666,7 @@ func (c *Conn) readAndBuffer(ctx context.Context) error {
 		return netError(err)
 	}
 
-	pkts, err := recordlayer.ContentAwareUnpackDatagram(b[:i], len(c.state.LocalConnectionID))
+	pkts, err := recordlayer.ContentAwareUnpackDatagram(b[:i], len(c.state.localConnectionID))
 	if err != nil {
 		return err
 	}
@@ -734,7 +734,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 	h := &recordlayer.Header{
 		// Set connection ID size so that records of content type tls12_cid will
 		// be parsed correctly.
-		ConnectionID: make([]byte, len(c.state.LocalConnectionID)),
+		ConnectionID: make([]byte, len(c.state.localConnectionID)),
 	}
 	if err := h.Unmarshal(buf); err != nil {
 		// Decode error must be silently discarded
@@ -785,7 +785,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 
 		// If a connection identifier had been negotiated and encryption is
 		// enabled, the connection identifier MUST be sent.
-		if len(c.state.LocalConnectionID) > 0 && h.ContentType != protocol.ContentTypeConnectionID {
+		if len(c.state.localConnectionID) > 0 && h.ContentType != protocol.ContentTypeConnectionID {
 			c.log.Debug("discarded packet missing connection ID after value negotiated")
 			return false, nil, nil
 		}
@@ -793,7 +793,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		var err error
 		hdr := recordlayer.Header{}
 		if h.ContentType == protocol.ContentTypeConnectionID {
-			hdr.ConnectionID = make([]byte, len(c.state.LocalConnectionID))
+			hdr.ConnectionID = make([]byte, len(c.state.localConnectionID))
 		}
 		buf, err = c.state.cipherSuite.Decrypt(hdr, buf)
 		if err != nil {
@@ -824,7 +824,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		}
 
 		// If connection ID does not match discard the packet.
-		if !bytes.Equal(c.state.LocalConnectionID, h.ConnectionID) {
+		if !bytes.Equal(c.state.localConnectionID, h.ConnectionID) {
 			c.log.Debug("unexpected connection ID")
 			return false, nil, nil
 		}
@@ -1128,13 +1128,12 @@ func (c *Conn) RemoteAddr() net.Addr {
 	return c.rAddr
 }
 
-// TODO: refactor to support using connection IDs and updates to remote address.
 func (c *Conn) sessionKey() []byte {
 	if c.state.isClient {
 		// As ServerName can be like 0.example.com, it's better to add
 		// delimiter character which is not allowed to be in
 		// neither address or domain name.
-		return []byte("TODO" + "_" + c.fsm.cfg.serverName)
+		return []byte(c.rAddr.String() + "_" + c.fsm.cfg.serverName)
 	}
 	return c.state.SessionID
 }

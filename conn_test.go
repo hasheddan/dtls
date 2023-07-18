@@ -2547,7 +2547,7 @@ func TestSessionResume(t *testing.T) {
 		ca, cb := dpipe.Pipe()
 
 		_ = ss.Set(id, s)
-		_ = ss.Set([]byte("TODO"+"_example.com"), s)
+		_ = ss.Set([]byte(ca.RemoteAddr().String()+"_example.com"), s)
 
 		go func() {
 			config := &Config{
@@ -2637,7 +2637,7 @@ func TestSessionResume(t *testing.T) {
 		if res.err != nil {
 			t.Fatal(res.err)
 		}
-		cs, _ := s1.Get([]byte("TODO" + "_example.com"))
+		cs, _ := s1.Get([]byte(ca.RemoteAddr().String() + "_example.com"))
 		if !bytes.Equal(actualMasterSecret, cs.Secret) {
 			t.Errorf("TestSessionResumetion: masterSecret Mismatch: expected(%v) actual(%v)", ss.Secret, actualMasterSecret)
 		}

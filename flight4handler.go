@@ -253,8 +253,8 @@ func flight4Generate(_ flightConn, state *State, _ *handshakeCache, cfg *handsha
 	// If we have a connection ID generator, we are willing to use connection
 	// IDs.
 	if cfg.connectionIDGenerator != nil {
-		state.LocalConnectionID = cfg.connectionIDGenerator()
-		extensions = append(extensions, &extension.ConnectionID{CID: state.LocalConnectionID})
+		state.localConnectionID = cfg.connectionIDGenerator()
+		extensions = append(extensions, &extension.ConnectionID{CID: state.localConnectionID})
 	}
 
 	var pkts []*packet

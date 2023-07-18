@@ -122,8 +122,8 @@ func flight1Generate(c flightConn, state *State, _ *handshakeCache, cfg *handsha
 	// in which case we are just requesting that the server send us a CID to
 	// use.
 	if cfg.connectionIDGenerator != nil {
-		state.LocalConnectionID = cfg.connectionIDGenerator()
-		extensions = append(extensions, &extension.ConnectionID{CID: state.LocalConnectionID})
+		state.localConnectionID = cfg.connectionIDGenerator()
+		extensions = append(extensions, &extension.ConnectionID{CID: state.localConnectionID})
 	}
 
 	return []*packet{

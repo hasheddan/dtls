@@ -70,7 +70,7 @@ func flight0Parse(_ context.Context, _ flightConn, state *State, cache *handshak
 		case *extension.ALPN:
 			state.peerSupportedProtocols = e.ProtocolNameList
 		case *extension.ConnectionID:
-			state.RemoteConnectionID = e.CID
+			state.remoteConnectionID = e.CID
 		}
 	}
 

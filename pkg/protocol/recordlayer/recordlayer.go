@@ -13,15 +13,15 @@ import (
 
 // DTLS fixed size record layer header when Connection IDs are not in-use.
 
-// --------------------------------
-// | Type   |   Version   | Epoch |
-// --------------------------------
-// | Epoch  |    Sequence Number  |
-// --------------------------------
-// |   Sequence Number   | Length |
-// --------------------------------
-// | Length |      Fragment...    |
-// --------------------------------
+// ---------------------------------
+// | Type   |   Version   |  Epoch |
+// ---------------------------------
+// | Epoch  |    Sequence Number   |
+// ---------------------------------
+// |   Sequence Number   |  Length |
+// ---------------------------------
+// | Length |      Fragment...     |
+// ---------------------------------
 
 // fixedHeaderLenIdx is the index at which the record layer content length is
 // specified in a fixed length header (i.e. one that does not include a

@@ -38,7 +38,6 @@ func (p *InnerPlaintext) Unmarshal(data []byte) error {
 		i--
 	}
 	if i == 0 {
-		// TODO: more specific error for missing content type
 		return errBufferTooSmall
 	}
 	p.RealType = protocol.ContentType(data[i])

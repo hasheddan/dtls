@@ -268,7 +268,10 @@ func Server(conn net.Conn, config *Config) (*Conn, error) {
 	return ServerWithContext(ctx, conn, config)
 }
 
-func UDPServer(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
+// PacketServer listens for incoming DTLS connections.
+// Unlike Server, PacketServer allows for connections to change remote address.
+// The provided rAddr will be used as the initial remote address for sending.
+func PacketServer(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
 	return createConn(ctx, conn, rAddr, config, true, nil)
 }
 

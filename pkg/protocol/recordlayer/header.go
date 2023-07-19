@@ -24,7 +24,9 @@ type Header struct {
 
 // RecordLayer enums
 const (
-	DefaultHeaderSize = 13
+	// FixedHeaderSize is the size of a DTLS record header when connection IDs
+	// are not in use.
+	FixedHeaderSize   = 13
 	MaxSequenceNumber = 0x0000FFFFFFFFFFFF
 )
 
@@ -34,7 +36,7 @@ func (h *Header) Marshal() ([]byte, error) {
 		return nil, errSequenceNumberOverflow
 	}
 
-	hs := DefaultHeaderSize + len(h.ConnectionID)
+	hs := FixedHeaderSize + len(h.ConnectionID)
 
 	out := make([]byte, hs)
 	out[0] = byte(h.ContentType)
@@ -49,13 +51,13 @@ func (h *Header) Marshal() ([]byte, error) {
 
 // Unmarshal populates a TLS RecordLayer Header from binary
 func (h *Header) Unmarshal(data []byte) error {
-	if len(data) < DefaultHeaderSize {
+	if len(data) < FixedHeaderSize {
 		return errBufferTooSmall
 	}
 	h.ContentType = protocol.ContentType(data[0])
 	if h.ContentType == protocol.ContentTypeConnectionID {
 		// If a CID was expected the ConnectionID should have been initialized.
-		if len(data) < DefaultHeaderSize+len(h.ConnectionID) {
+		if len(data) < FixedHeaderSize+len(h.ConnectionID) {
 			return errBufferTooSmall
 		}
 		h.ConnectionID = data[11 : 11+len(h.ConnectionID)]
@@ -79,5 +81,5 @@ func (h *Header) Unmarshal(data []byte) error {
 
 // Size returns the total size of the header.
 func (h *Header) Size() int {
-	return DefaultHeaderSize + len(h.ConnectionID)
+	return FixedHeaderSize + len(h.ConnectionID)
 }

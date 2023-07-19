@@ -416,7 +416,7 @@ func (c *Conn) writePackets(ctx context.Context, pkts []*packet) error {
 				srvCliStr(c.state.isClient), h.Header.Type.String(),
 				p.record.Header.Epoch, h.Header.MessageSequence)
 
-			c.handshakeCache.push(handshakeRaw[recordlayer.DefaultHeaderSize:], p.record.Header.Epoch, h.Header.MessageSequence, h.Header.Type, c.state.isClient)
+			c.handshakeCache.push(handshakeRaw[recordlayer.FixedHeaderSize:], p.record.Header.Epoch, h.Header.MessageSequence, h.Header.Type, c.state.isClient)
 
 			rawHandshakePackets, err := c.processHandshakePacket(p, h)
 			if err != nil {

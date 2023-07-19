@@ -99,11 +99,11 @@ func UnpackDatagram(buf []byte) ([][]byte, error) {
 	out := [][]byte{}
 
 	for offset := 0; len(buf) != offset; {
-		if len(buf)-offset <= DefaultHeaderSize {
+		if len(buf)-offset <= FixedHeaderSize {
 			return nil, errInvalidPacketLength
 		}
 
-		pktLen := (DefaultHeaderSize + int(binary.BigEndian.Uint16(buf[offset+11:])))
+		pktLen := (FixedHeaderSize + int(binary.BigEndian.Uint16(buf[offset+11:])))
 		if offset+pktLen > len(buf) {
 			return nil, errInvalidPacketLength
 		}
@@ -122,7 +122,7 @@ func ContentAwareUnpackDatagram(buf []byte, cidLength int) ([][]byte, error) {
 	out := [][]byte{}
 
 	for offset := 0; len(buf) != offset; {
-		headerSize := DefaultHeaderSize
+		headerSize := FixedHeaderSize
 		lenIdx := fixedHeaderLenIdx
 		if protocol.ContentType(buf[offset]) == protocol.ContentTypeConnectionID {
 			headerSize += cidLength

@@ -202,7 +202,7 @@ func (c *CBC) hmacCID(epoch uint16, sequenceNumber uint64, protocolVersion proto
 
 	var msg cryptobyte.Builder
 
-	msg.AddUint64(seqNumPlaneholder)
+	msg.AddUint64(seqNumPlaceholder)
 	msg.AddUint8(uint8(protocol.ContentTypeConnectionID))
 	msg.AddUint8(uint8(len(cid)))
 	msg.AddUint8(uint8(protocol.ContentTypeConnectionID))

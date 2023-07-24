@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	seqNumPlaneholder = 18446744073709551615
+	// 8 bytes of 0xff.
+	// https://datatracker.ietf.org/doc/html/rfc9146#name-record-payload-protection
+	seqNumPlaceholder = 0xffffffffffffffff
 )
 
 var (
@@ -45,7 +47,7 @@ func generateAEADAdditionalData(h *recordlayer.Header, payloadLen int) []byte {
 func generateAEADAdditionalDataCID(h *recordlayer.Header, payloadLen int) []byte {
 	var b cryptobyte.Builder
 
-	b.AddUint64(seqNumPlaneholder)
+	b.AddUint64(seqNumPlaceholder)
 	b.AddUint8(uint8(protocol.ContentTypeConnectionID))
 	b.AddUint8(uint8(len(h.ConnectionID)))
 	b.AddUint8(uint8(protocol.ContentTypeConnectionID))

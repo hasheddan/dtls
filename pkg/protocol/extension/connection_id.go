@@ -12,8 +12,9 @@ import (
 //
 // https://tools.ietf.org/html/rfc9146
 type ConnectionID struct {
-	// Zero-length connection ID indicates that connection ID will be sent but
-	// there is no need to respond with one.
+	// A zero-length connection ID indicates for a client or server that
+	// negotiated connection IDs from the peer will be sent but there is no need
+	// to respond with one
 	CID []byte // variable length
 }
 
@@ -48,11 +49,11 @@ func (c *ConnectionID) Unmarshal(data []byte) error {
 
 	var cid cryptobyte.String
 	if !extData.ReadUint8LengthPrefixed(&cid) {
-		return errInvalidSNIFormat
+		return errInvalidCIDFormat
 	}
 	c.CID = make([]byte, len(cid))
 	if !cid.CopyBytes(c.CID) {
-		return errInvalidSNIFormat
+		return errInvalidCIDFormat
 	}
 	return nil
 }

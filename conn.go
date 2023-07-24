@@ -734,10 +734,11 @@ func (c *Conn) handleQueuedPackets(ctx context.Context) error {
 }
 
 func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.Addr, enqueue bool) (bool, *alert.Alert, error) { //nolint:gocognit
-	h := &recordlayer.Header{
-		// Set connection ID size so that records of content type tls12_cid will
-		// be parsed correctly.
-		ConnectionID: make([]byte, len(c.state.localConnectionID)),
+	h := &recordlayer.Header{}
+	// Set connection ID size so that records of content type tls12_cid will
+	// be parsed correctly.
+	if len(c.state.localConnectionID) > 0 {
+		h.ConnectionID = make([]byte, len(c.state.localConnectionID))
 	}
 	if err := h.Unmarshal(buf); err != nil {
 		// Decode error must be silently discarded
@@ -794,7 +795,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		}
 
 		var err error
-		hdr := recordlayer.Header{}
+		var hdr recordlayer.Header
 		if h.ContentType == protocol.ContentTypeConnectionID {
 			hdr.ConnectionID = make([]byte, len(c.state.localConnectionID))
 		}

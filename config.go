@@ -180,7 +180,10 @@ type Config struct {
 	// ConnectionIDGenerator generates connection identifiers that should be
 	// sent by the remote party if it supports the DTLS Connection Identifier
 	// extension, as determined during the handshake. Generated connection
-	// identifiers must always have the same length.
+	// identifiers must always have the same length. Returning a zero-length
+	// connection identifier indicates that the local party supports sending
+	// connection identifiers but does not require the remote party to send
+	// them.
 	// https://datatracker.ietf.org/doc/html/rfc9146
 	ConnectionIDGenerator func() []byte
 }

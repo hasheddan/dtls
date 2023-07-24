@@ -183,7 +183,8 @@ type Config struct {
 	// identifiers must always have the same length. Returning a zero-length
 	// connection identifier indicates that the local party supports sending
 	// connection identifiers but does not require the remote party to send
-	// them.
+	// them. A nil ConnectionIDGenerator indicates that connection identifiers
+	// are not supported.
 	// https://datatracker.ietf.org/doc/html/rfc9146
 	ConnectionIDGenerator func() []byte
 }

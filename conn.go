@@ -62,6 +62,7 @@ type Conn struct {
 	state          State // Internal state
 
 	maximumTransmissionUnit int
+	paddingLengthGenerator  func(uint) uint
 
 	handshakeCompletedSuccessfully atomic.Value
 
@@ -128,12 +129,18 @@ func createConn(ctx context.Context, nextConn net.PacketConn, rAddr net.Addr, co
 		replayProtectionWindow = defaultReplayProtectionWindow
 	}
 
+	paddingLengthGenerator := config.PaddingLengthGenerator
+	if paddingLengthGenerator == nil {
+		paddingLengthGenerator = func(uint) uint { return 0 }
+	}
+
 	c := &Conn{
 		rAddr:                   rAddr,
 		nextConn:                netctx.NewPacketConn(nextConn),
 		fragmentBuffer:          newFragmentBuffer(),
 		handshakeCache:          newHandshakeCache(),
 		maximumTransmissionUnit: mtu,
+		paddingLengthGenerator:  paddingLengthGenerator,
 
 		decrypted: make(chan interface{}, 1),
 		log:       logger,
@@ -494,7 +501,6 @@ func (c *Conn) processPacket(p *packet) ([]byte, error) {
 		inner := &recordlayer.InnerPlaintext{
 			Content:  content,
 			RealType: p.record.Header.ContentType,
-			Zeros:    8,
 		}
 		rawInner, err := inner.Marshal() //nolint:govet
 		if err != nil {
@@ -556,7 +562,7 @@ func (c *Conn) processHandshakePacket(p *packet, h *handshake.Handshake) ([][]by
 			inner := &recordlayer.InnerPlaintext{
 				Content:  handshakeFragment,
 				RealType: protocol.ContentTypeHandshake,
-				Zeros:    8,
+				Zeros:    c.paddingLengthGenerator(uint(len(handshakeFragment))),
 			}
 			rawInner, err := inner.Marshal() //nolint:govet
 			if err != nil {

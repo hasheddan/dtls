@@ -187,6 +187,15 @@ type Config struct {
 	// are not supported.
 	// https://datatracker.ietf.org/doc/html/rfc9146
 	ConnectionIDGenerator func() []byte
+
+	// PaddingLengthGenerator generates the number of padding bytes used to
+	// inflate ciphertext size in order to obscure content size from observers.
+	// The length of the content is passed to the generator such that both
+	// deterministic and random padding schemes can be applied while not
+	// exceeding maximum record size.
+	// If no PaddingLengthGenerator is specified, padding will not be applied.
+	// https://datatracker.ietf.org/doc/html/rfc9146#section-4
+	PaddingLengthGenerator func(uint) uint
 }
 
 func defaultConnectContextMaker() (context.Context, func()) {

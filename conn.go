@@ -783,6 +783,10 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		return false, nil, nil
 	}
 
+	// originalCID indicates whether the original record had content type
+	// Connection ID.
+	originalCID := false
+
 	// Decrypt
 	if h.Epoch != 0 {
 		if c.state.cipherSuite == nil || !c.state.cipherSuite.IsInitialized() {
@@ -813,6 +817,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		// If this is a connection ID record, make it look like a normal record for
 		// further processing.
 		if h.ContentType == protocol.ContentTypeConnectionID {
+			originalCID = true
 			ip := &recordlayer.InnerPlaintext{}
 			if err := ip.Unmarshal(buf[h.Size():]); err != nil { //nolint:govet
 				c.log.Debugf("unpacking inner plaintext failed: %s", err)
@@ -839,14 +844,6 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 			return false, nil, nil
 		}
 
-		// Any valid connection ID record is a candidate for updating the remote
-		// address.
-		// https://datatracker.ietf.org/doc/html/rfc9146#peer-address-update
-		if rAddr != c.RemoteAddr() {
-			c.lock.Lock()
-			c.rAddr = rAddr
-			c.lock.Unlock()
-		}
 	}
 
 	isHandshake, err := c.fragmentBuffer.push(append([]byte{}, buf...))
@@ -874,6 +871,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 		return false, &alert.Alert{Level: alert.Fatal, Description: alert.DecodeError}, err
 	}
 
+	isLatestSeqNum := false
 	switch content := r.Content.(type) {
 	case *alert.Alert:
 		c.log.Tracef("%s: <- %s", srvCliStr(c.state.isClient), content.String())
@@ -882,7 +880,7 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 			// Respond with a close_notify [RFC5246 Section 7.2.1]
 			a = &alert.Alert{Level: alert.Warning, Description: alert.CloseNotify}
 		}
-		markPacketAsValid()
+		_ = markPacketAsValid()
 		return false, a, &alertError{content}
 	case *protocol.ChangeCipherSpec:
 		if c.state.cipherSuite == nil || !c.state.cipherSuite.IsInitialized() {
@@ -898,14 +896,14 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 
 		if c.state.getRemoteEpoch()+1 == newRemoteEpoch {
 			c.setRemoteEpoch(newRemoteEpoch)
-			markPacketAsValid()
+			isLatestSeqNum = markPacketAsValid()
 		}
 	case *protocol.ApplicationData:
 		if h.Epoch == 0 {
 			return false, &alert.Alert{Level: alert.Fatal, Description: alert.UnexpectedMessage}, errApplicationDataEpochZero
 		}
 
-		markPacketAsValid()
+		isLatestSeqNum = markPacketAsValid()
 
 		select {
 		case c.decrypted <- content.Data:
@@ -916,6 +914,18 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 	default:
 		return false, &alert.Alert{Level: alert.Fatal, Description: alert.UnexpectedMessage}, fmt.Errorf("%w: %d", errUnhandledContextType, content.ContentType())
 	}
+
+	// Any valid connection ID record is a candidate for updating the remote
+	// address if it is the latest record received.
+	// https://datatracker.ietf.org/doc/html/rfc9146#peer-address-update
+	if originalCID && isLatestSeqNum {
+		if rAddr != c.RemoteAddr() {
+			c.lock.Lock()
+			c.rAddr = rAddr
+			c.lock.Unlock()
+		}
+	}
+
 	return false, nil, nil
 }
 

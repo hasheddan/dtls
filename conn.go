@@ -248,51 +248,45 @@ func createConn(ctx context.Context, nextConn net.PacketConn, rAddr net.Addr, co
 // Dial connects to the given network address and establishes a DTLS connection on top.
 // Connection handshake will timeout using ConnectContextMaker in the Config.
 // If you want to specify the timeout duration, use DialWithContext() instead.
-func Dial(network string, raddr *net.UDPAddr, config *Config) (*Conn, error) {
+func Dial(network string, rAddr *net.UDPAddr, config *Config) (*Conn, error) {
 	ctx, cancel := config.connectContextMaker()
 	defer cancel()
 
-	return DialWithContext(ctx, network, raddr, config)
+	return DialWithContext(ctx, network, rAddr, config)
 }
 
 // Client establishes a DTLS connection over an existing connection.
 // Connection handshake will timeout using ConnectContextMaker in the Config.
 // If you want to specify the timeout duration, use ClientWithContext() instead.
-func Client(conn net.Conn, config *Config) (*Conn, error) {
+func Client(conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
 	ctx, cancel := config.connectContextMaker()
 	defer cancel()
 
-	return ClientWithContext(ctx, conn, config)
+	return ClientWithContext(ctx, conn, rAddr, config)
 }
 
 // Server listens for incoming DTLS connections.
 // Connection handshake will timeout using ConnectContextMaker in the Config.
 // If you want to specify the timeout duration, use ServerWithContext() instead.
-func Server(conn net.Conn, config *Config) (*Conn, error) {
+func Server(conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
 	ctx, cancel := config.connectContextMaker()
 	defer cancel()
 
-	return ServerWithContext(ctx, conn, config)
+	return ServerWithContext(ctx, conn, rAddr, config)
 }
 
-// PacketServer listens for incoming DTLS connections.
-// Unlike Server, PacketServer allows for connections to change remote address.
-// The provided rAddr will be used as the initial remote address for sending.
-func PacketServer(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
-	return createConn(ctx, conn, rAddr, config, true, nil)
-}
-
-// DialWithContext connects to the given network address and establishes a DTLS connection on top.
-func DialWithContext(ctx context.Context, network string, raddr *net.UDPAddr, config *Config) (*Conn, error) {
-	pConn, err := net.DialUDP(network, nil, raddr)
+// DialWithContext connects to the given network address and establishes a DTLS
+// connection on top.
+func DialWithContext(ctx context.Context, network string, rAddr *net.UDPAddr, config *Config) (*Conn, error) {
+	pConn, err := net.DialUDP(network, nil, rAddr)
 	if err != nil {
 		return nil, err
 	}
-	return ClientWithContext(ctx, pConn, config)
+	return ClientWithContext(ctx, pConn, rAddr, config)
 }
 
 // ClientWithContext establishes a DTLS connection over an existing connection.
-func ClientWithContext(ctx context.Context, conn net.Conn, config *Config) (*Conn, error) {
+func ClientWithContext(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
 	switch {
 	case config == nil:
 		return nil, errNoConfigProvided
@@ -300,16 +294,16 @@ func ClientWithContext(ctx context.Context, conn net.Conn, config *Config) (*Con
 		return nil, errPSKAndIdentityMustBeSetForClient
 	}
 
-	return createConn(ctx, fromConn(conn), conn.RemoteAddr(), config, true, nil)
+	return createConn(ctx, conn, rAddr, config, true, nil)
 }
 
 // ServerWithContext listens for incoming DTLS connections.
-func ServerWithContext(ctx context.Context, conn net.Conn, config *Config) (*Conn, error) {
+func ServerWithContext(ctx context.Context, conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) {
 	if config == nil {
 		return nil, errNoConfigProvided
 	}
 
-	return createConn(ctx, fromConn(conn), conn.RemoteAddr(), config, false, nil)
+	return createConn(ctx, conn, rAddr, config, false, nil)
 }
 
 // Read reads data from the connection.
@@ -843,7 +837,6 @@ func (c *Conn) handleIncomingPacket(ctx context.Context, buf []byte, rAddr net.A
 			c.log.Debug("unexpected connection ID")
 			return false, nil, nil
 		}
-
 	}
 
 	isHandshake, err := c.fragmentBuffer.push(append([]byte{}, buf...))

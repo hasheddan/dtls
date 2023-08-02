@@ -68,7 +68,7 @@ func DoTestResume(t *testing.T, newLocal, newRemote func(net.PacketConn, net.Add
 	go func() {
 		var remote *Conn
 		var errR error
-		remote, errR = newRemote(util.FromConn(remoteConn), remote.RemoteAddr(), config)
+		remote, errR = newRemote(util.FromConn(remoteConn), remoteConn.RemoteAddr(), config)
 		if errR != nil {
 			errChan <- errR
 		}

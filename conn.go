@@ -278,10 +278,14 @@ func Server(conn net.PacketConn, rAddr net.Addr, config *Config) (*Conn, error) 
 // DialWithContext connects to the given network address and establishes a DTLS
 // connection on top.
 func DialWithContext(ctx context.Context, network string, rAddr *net.UDPAddr, config *Config) (*Conn, error) {
-	pConn, err := net.DialUDP(network, nil, rAddr)
+	// net.ListenUDP is used rather than net.DialUDP as the latter prevents the
+	// use of net.PacketConn.WriteTo.
+	// https://github.com/golang/go/blob/ce5e37ec21442c6eb13a43e68ca20129102ebac0/src/net/udpsock_posix.go#L115
+	pConn, err := net.ListenUDP(network, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return ClientWithContext(ctx, pConn, rAddr, config)
 }
 

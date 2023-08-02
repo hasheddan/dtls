@@ -1042,6 +1042,120 @@ func TestClientCertificate(t *testing.T) {
 	})
 }
 
+func TestConnectionID(t *testing.T) {
+	// Check for leaking routines
+	report := test.CheckRoutines(t)
+	defer report()
+
+	clientCID := []byte{5, 77, 33, 24, 93, 27, 45, 81}
+	serverCID := []byte{64, 24, 73, 2, 17, 96, 38, 59}
+	cidEcho := func(echo []byte) func() []byte {
+		return func() []byte {
+			return echo
+		}
+	}
+	tests := map[string]struct {
+		clientCfg          *Config
+		serverCfg          *Config
+		clientConnectionID []byte
+		serverConnectionID []byte
+	}{
+		"BidirectionalConnectionIDs": {
+			clientCfg: &Config{
+				ConnectionIDGenerator: cidEcho(clientCID),
+			},
+			serverCfg: &Config{
+				ConnectionIDGenerator: cidEcho(serverCID),
+			},
+			clientConnectionID: clientCID,
+			serverConnectionID: serverCID,
+		},
+		"BothSupportOnlyClientSends": {
+			clientCfg: &Config{
+				ConnectionIDGenerator: cidEcho(nil),
+			},
+			serverCfg: &Config{
+				ConnectionIDGenerator: cidEcho(serverCID),
+			},
+			serverConnectionID: serverCID,
+		},
+		"BothSupportOnlyServerSends": {
+			clientCfg: &Config{
+				ConnectionIDGenerator: cidEcho(clientCID),
+			},
+			serverCfg: &Config{
+				ConnectionIDGenerator: cidEcho(nil),
+			},
+			clientConnectionID: clientCID,
+		},
+		"ClientDoesNotSupport": {
+			clientCfg: &Config{},
+			serverCfg: &Config{
+				ConnectionIDGenerator: cidEcho(serverCID),
+			},
+		},
+		"ServerDoesNotSupport": {
+			clientCfg: &Config{
+				ConnectionIDGenerator: cidEcho(clientCID),
+			},
+			serverCfg: &Config{},
+		},
+		"NeitherSupport": {
+			clientCfg: &Config{},
+			serverCfg: &Config{},
+		},
+	}
+	for name, tt := range tests {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			ca, cb := dpipe.Pipe()
+			type result struct {
+				c   *Conn
+				err error
+			}
+			c := make(chan result)
+
+			go func() {
+				client, err := testClient(ctx, util.FromConn(ca), ca.RemoteAddr(), tt.clientCfg, true)
+				c <- result{client, err}
+			}()
+
+			server, err := testServer(ctx, util.FromConn(cb), cb.RemoteAddr(), tt.serverCfg, true)
+			if err != nil {
+				t.Fatalf("Unexpected server error: %v", err)
+			}
+			res := <-c
+			if res.err != nil {
+				t.Fatalf("Unexpected client error: %v", res.err)
+			}
+			defer func() {
+				if err == nil {
+					_ = server.Close()
+				}
+				if res.err == nil {
+					_ = res.c.Close()
+				}
+			}()
+
+			if !bytes.Equal(res.c.state.localConnectionID, tt.clientConnectionID) {
+				t.Errorf("Unexpected client local connection ID\nwant: %v\ngot:%v", tt.clientConnectionID, res.c.state.localConnectionID)
+			}
+			if !bytes.Equal(res.c.state.remoteConnectionID, tt.serverConnectionID) {
+				t.Errorf("Unexpected client remote connection ID\nwant: %v\ngot:%v", tt.serverConnectionID, res.c.state.remoteConnectionID)
+			}
+			if !bytes.Equal(server.state.localConnectionID, tt.serverConnectionID) {
+				t.Errorf("Unexpected server local connection ID\nwant: %v\ngot:%v", tt.serverConnectionID, server.state.localConnectionID)
+			}
+			if !bytes.Equal(server.state.remoteConnectionID, tt.clientConnectionID) {
+				t.Errorf("Unexpected server remote connection ID\nwant: %v\ngot:%v", tt.clientConnectionID, server.state.remoteConnectionID)
+			}
+		})
+	}
+}
+
 func TestExtendedMasterSecret(t *testing.T) {
 	// Check for leaking routines
 	report := test.CheckRoutines(t)

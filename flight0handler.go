@@ -70,8 +70,18 @@ func flight0Parse(_ context.Context, _ flightConn, state *State, cache *handshak
 		case *extension.ALPN:
 			state.peerSupportedProtocols = e.ProtocolNameList
 		case *extension.ConnectionID:
-			state.remoteConnectionID = e.CID
+			// Only set connection ID to be sent if server supports connection
+			// IDs.
+			if cfg.connectionIDGenerator != nil {
+				state.remoteConnectionID = e.CID
+			}
 		}
+	}
+
+	// If the client doesn't support connection IDs, the server should not
+	// expect one to be sent.
+	if state.remoteConnectionID == nil {
+		state.localConnectionID = nil
 	}
 
 	if cfg.extendedMasterSecret == RequireExtendedMasterSecret && !state.extendedMasterSecret {

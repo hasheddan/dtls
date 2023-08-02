@@ -251,8 +251,10 @@ func flight4Generate(_ flightConn, state *State, _ *handshakeCache, cfg *handsha
 	}
 
 	// If we have a connection ID generator, we are willing to use connection
-	// IDs.
-	if cfg.connectionIDGenerator != nil {
+	// IDs. We already know whether the client supports connection IDs from
+	// parsing the ClientHello, so avoid setting local connection ID if the
+	// client won't send it.
+	if cfg.connectionIDGenerator != nil && state.remoteConnectionID != nil {
 		state.localConnectionID = cfg.connectionIDGenerator()
 		extensions = append(extensions, &extension.ConnectionID{CID: state.localConnectionID})
 	}

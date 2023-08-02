@@ -67,9 +67,19 @@ func flight3Parse(ctx context.Context, c flightConn, state *State, cache *handsh
 				}
 				state.NegotiatedProtocol = e.ProtocolNameList[0]
 			case *extension.ConnectionID:
-				state.remoteConnectionID = e.CID
+				// Only set connection ID to be sent if client supports connection
+				// IDs.
+				if cfg.connectionIDGenerator != nil {
+					state.remoteConnectionID = e.CID
+				}
 			}
 		}
+		// If the server doesn't support connection IDs, the client should not
+		// expect one to be sent.
+		if state.remoteConnectionID == nil {
+			state.localConnectionID = nil
+		}
+
 		if cfg.extendedMasterSecret == RequireExtendedMasterSecret && !state.extendedMasterSecret {
 			return 0, &alert.Alert{Level: alert.Fatal, Description: alert.InsufficientSecurity}, errClientRequiredButNoServerEMS
 		}

@@ -16,12 +16,12 @@ func TestExtensionConnectionID(t *testing.T) {
 
 	raw, err := parsedExtensionConnectionID.Marshal()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	roundtrip := &ConnectionID{}
 	if err := roundtrip.Unmarshal(raw); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if !reflect.DeepEqual(roundtrip, parsedExtensionConnectionID) {

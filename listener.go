@@ -6,11 +6,56 @@ package dtls
 import (
 	"net"
 
-	"github.com/pion/dtls/v2/internal/util"
+	"github.com/pion/dtls/v2/internal/net/udp"
+	dtlsnet "github.com/pion/dtls/v2/pkg/net"
 	"github.com/pion/dtls/v2/pkg/protocol"
+	"github.com/pion/dtls/v2/pkg/protocol/extension"
+	"github.com/pion/dtls/v2/pkg/protocol/handshake"
 	"github.com/pion/dtls/v2/pkg/protocol/recordlayer"
-	"github.com/pion/transport/v2/udp"
 )
+
+// cidConnResolver extracts connection IDs from incoming packets and uses them
+// to route to the proper connection.
+func cidConnResolver(packet []byte, raddr net.Addr) string {
+	pkts, err := recordlayer.UnpackDatagram(packet)
+	if err != nil || len(pkts) < 1 {
+		return raddr.String()
+	}
+	h := &recordlayer.Header{}
+	if err := h.Unmarshal(pkts[0]); err != nil {
+		return raddr.String()
+	}
+	if h.ContentType != protocol.ContentTypeConnectionID {
+		return raddr.String()
+	}
+	return string(h.ConnectionID)
+}
+
+// cidConnIdentifier extracts connection IDs from outgoing ServerHello packets
+// and associates them with the associated connection.
+func cidConnIdentifier(packet []byte, _ net.Addr) (string, bool) {
+	pkts, err := recordlayer.UnpackDatagram(packet)
+	if err != nil || len(pkts) < 1 {
+		return "", false
+	}
+	h := &recordlayer.Header{}
+	if err := h.Unmarshal(pkts[0]); err != nil {
+		return "", false
+	}
+	if h.ContentType != protocol.ContentTypeHandshake {
+		return "", false
+	}
+	sh := &handshake.MessageServerHello{}
+	if err := sh.Unmarshal(pkts[0]); err != nil {
+		return "", false
+	}
+	for _, ext := range sh.Extensions {
+		if e, ok := ext.(*extension.ConnectionID); ok {
+			return string(e.CID), true
+		}
+	}
+	return "", false
+}
 
 // Listen creates a DTLS listener
 func Listen(network string, laddr *net.UDPAddr, config *Config) (net.Listener, error) {
@@ -31,6 +76,12 @@ func Listen(network string, laddr *net.UDPAddr, config *Config) (net.Listener, e
 			return h.ContentType == protocol.ContentTypeHandshake
 		},
 	}
+	// If connection ID support is enabled, then they must be supported in
+	// routing.
+	if config.ConnectionIDGenerator != nil {
+		lc.ConnectionResolver = cidConnResolver
+		lc.ConnectionIdentifier = cidConnIdentifier
+	}
 	parent, err := lc.Listen(network, laddr)
 	if err != nil {
 		return nil, err
@@ -42,7 +93,7 @@ func Listen(network string, laddr *net.UDPAddr, config *Config) (net.Listener, e
 }
 
 // NewListener creates a DTLS listener which accepts connections from an inner Listener.
-func NewListener(inner net.Listener, config *Config) (net.Listener, error) {
+func NewListener(inner dtlsnet.PacketListener, config *Config) (net.Listener, error) {
 	if err := validateConfig(config); err != nil {
 		return nil, err
 	}
@@ -56,7 +107,7 @@ func NewListener(inner net.Listener, config *Config) (net.Listener, error) {
 // listener represents a DTLS listener
 type listener struct {
 	config *Config
-	parent net.Listener
+	parent dtlsnet.PacketListener
 }
 
 // Accept waits for and returns the next connection to the listener.
@@ -64,11 +115,11 @@ type listener struct {
 // Connection handshake will timeout using ConnectContextMaker in the Config.
 // If you want to specify the timeout duration, set ConnectContextMaker.
 func (l *listener) Accept() (net.Conn, error) {
-	c, err := l.parent.Accept()
+	c, raddr, err := l.parent.Accept()
 	if err != nil {
 		return nil, err
 	}
-	return Server(util.FromConn(c), c.RemoteAddr(), l.config)
+	return Server(c, raddr, l.config)
 }
 
 // Close closes the listener.

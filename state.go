@@ -77,6 +77,8 @@ type serializedState struct {
 	IdentityHint          []byte
 	SessionID             []byte
 	IsClient              bool
+	LocalConnectionID     []byte
+	RemoteConnectionID    []byte
 }
 
 func (s *State) clone() *State {
@@ -106,6 +108,8 @@ func (s *State) serialize() *serializedState {
 		IdentityHint:          s.IdentityHint,
 		SessionID:             s.SessionID,
 		IsClient:              s.isClient,
+		LocalConnectionID:     s.localConnectionID,
+		RemoteConnectionID:    s.remoteConnectionID,
 	}
 }
 
@@ -143,6 +147,8 @@ func (s *State) deserialize(serialized serializedState) {
 	s.PeerCertificates = serialized.PeerCertificates
 	s.IdentityHint = serialized.IdentityHint
 	s.SessionID = serialized.SessionID
+	s.localConnectionID = serialized.LocalConnectionID
+	s.remoteConnectionID = serialized.RemoteConnectionID
 }
 
 func (s *State) initCipherSuite() error {

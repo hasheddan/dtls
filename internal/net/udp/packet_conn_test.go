@@ -496,17 +496,17 @@ func TestListenerCustomConnID(t *testing.T) {
 	}
 	network, addr := getConfig()
 	listener, err := (&ListenConfig{
-		ConnectionResolver: func(buf []byte, raddr net.Addr) string {
+		ConnectionResolver: func(buf []byte) (string, bool) {
 			p := &pkt{}
 			if err := json.Unmarshal(buf, p); err != nil {
 				t.Fatal(err)
 			}
 			if p.Payload == helloPayload {
-				return raddr.String()
+				return "", false
 			}
-			return fmt.Sprint(p.ID)
+			return fmt.Sprint(p.ID), true
 		},
-		ConnectionIdentifier: func(buf []byte, _ net.Addr) (string, bool) {
+		ConnectionIdentifier: func(buf []byte) (string, bool) {
 			p := &pkt{}
 			if err := json.Unmarshal(buf, p); err != nil {
 				t.Fatal(err)

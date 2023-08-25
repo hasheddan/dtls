@@ -40,8 +40,8 @@ type listener struct {
 	doneCh         chan struct{}
 	doneOnce       sync.Once
 	acceptFilter   func([]byte) bool
-	connResolver   func([]byte, net.Addr) string
-	connIdentifier func([]byte, net.Addr) (string, bool)
+	connResolver   func([]byte) (string, bool)
+	connIdentifier func([]byte) (string, bool)
 
 	connLock sync.Mutex
 	conns    map[string]*PacketConn
@@ -140,12 +140,12 @@ type ListenConfig struct {
 
 	// ConnectionResolver resolves an incoming packet to a connection by
 	// extracting an identifier from the packet contents.
-	ConnectionResolver func([]byte, net.Addr) string
+	ConnectionResolver func([]byte) (string, bool)
 
 	// ConnectionIdentifier extracts an identifier from an outgoing packet. If
 	// the identifier is not already associated with the connection, it will be
 	// added.
-	ConnectionIdentifier func([]byte, net.Addr) (string, bool)
+	ConnectionIdentifier func([]byte) (string, bool)
 }
 
 // Listen creates a new listener based on the ListenConfig.
@@ -222,9 +222,10 @@ func (l *listener) getConn(raddr net.Addr, buf []byte) (*PacketConn, bool, error
 	defer l.connLock.Unlock()
 	// If we have a custom resolver, use it.
 	if l.connResolver != nil {
-		conn, ok := l.conns[l.connResolver(buf, raddr)]
-		if ok {
-			return conn, true, nil
+		if id, ok := l.connResolver(buf); ok {
+			if conn, ok := l.conns[id]; ok {
+				return conn, true, nil
+			}
 		}
 	}
 
@@ -293,7 +294,7 @@ func (c *PacketConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	// sets it.
 	if c.listener.connIdentifier != nil {
 		id := c.id.Load()
-		candidate, ok := c.listener.connIdentifier(p, addr)
+		candidate, ok := c.listener.connIdentifier(p)
 		// If this is a new identifier, add entry to connection map.
 		if ok && id != candidate {
 			c.listener.connLock.Lock()
